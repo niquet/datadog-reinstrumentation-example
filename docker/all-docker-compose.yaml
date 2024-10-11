@@ -1,5 +1,3 @@
-
-#Use when service and agent are running on docker
 version: '3'
 services:
   notes:
@@ -7,53 +5,69 @@ services:
     restart: always
     build: 
       context: ../
-      dockerfile: ../dockerfile.notes
+      dockerfile: dockerfile.notes
     ports:
       - 8080:8080
     labels:
-      - com.datadoghq.tags.service="notes"
-      - com.datadoghq.tags.env="dev"
-      - com.datadoghq.tags.version="0.0.1"
+      - otel.service.name=notes
+      - otel.environment=dev
+      - otel.version=0.0.1
     environment:
-      - DD_SERVICE=notes
-      - DD_ENV=dev
-      - DD_VERSION=0.0.1
-      - DD_AGENT_HOST=datadog-agent
-      - CALENDAR_HOST=calendar
+      DD_AGENT_HOST: otel-collector
+      DD_DOGSTATSD_PORT: 8125
+      DD_TRACE_AGENT_PORT: 8126
     depends_on:
       - calendar
-      - datadog-agent
+      - otel-collector
 
   calendar:
     container_name: calendar
     restart: always
     build: 
       context: ../
-      dockerfile: ../dockerfile.calendar
+      dockerfile: dockerfile.calendar
+    ports:
+      - 8081:8081
     labels:
-       - com.datadoghq.tags.service="calendar"
-       - com.datadoghq.tags.env="dev"
-       - com.datadoghq.tags.version="0.0.1"
+       - otel.service.name=calendar
+       - otel.environment=dev
+       - otel.version=0.0.1
     environment:
-       - DD_SERVICE=calendar
-       - DD_ENV=dev
-       - DD_VERSION=0.0.1
-       - DD_AGENT_HOST=datadog-agent
+      DD_AGENT_HOST: otel-collector
+      DD_DOGSTATSD_PORT: 8125
+      DD_TRACE_AGENT_PORT: 8126
+    depends_on:
+      - otel-collector
+      
+  otel-collector:
+    container_name: otel-collector
+    image: otel/opentelemetry-collector-contrib:latest
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ../otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - 8125:8125/udp  # StatsD receiver 
+      - 8126:8126  # Datadog receiver
+      - 8889:8889  # Prometheus exporter
+    depends_on:
+      - jaeger
+
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:latest
+    volumes:
+      - ../prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - 9090:9090
     depends_on:
-      - datadog-agent
-      
-  datadog-agent:
-    container_name: datadog-agent
-    image: "gcr.io/datadoghq/agent:latest"
-    pid: host
+      - otel-collector
+
+  jaeger:
+    container_name: jaeger
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - 16686:16686  # Jaeger UI
+      - 4317:4317    # OTLP gRPC
+      - 4318:4318    # OTLP HTTP
     environment:
-      - DD_API_KEY=<DD_API_KEY_HERE>
-      - DD_APM_ENABLED=true
-      - DD_APM_NON_LOCAL_TRAFFIC=true
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /proc/:/host/proc/:ro
-      - /sys/fs/cgroup:/host/sys/fs/cgroup:ro 
-      
+      - COLLECTOR_OTLP_ENABLED=true

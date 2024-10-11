@@ -1,0 +1,28 @@
+receivers:
+  datadog:
+    endpoint: 0.0.0.0:8126  # Default port for Datadog APM
+  statsd:
+    endpoint: 0.0.0.0:8125  # DogStatsD receiver
+    aggregation_interval: 10s
+
+processors:
+  batch:
+
+exporters:
+  otlp:
+    endpoint: "jaeger:4317"
+    tls:
+      insecure: true
+  prometheus:
+    endpoint: 0.0.0.0:8889
+
+service:
+  pipelines:
+    traces:
+      receivers: [datadog]
+      processors: [batch]
+      exporters: [otlp]
+    metrics:
+      receivers: [datadog, statsd]
+      processors: [batch]
+      exporters: [prometheus]

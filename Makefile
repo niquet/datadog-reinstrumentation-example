@@ -1,6 +1,7 @@
 .DEFAULT_GOAL := build
 
-.PHONY:fmt vet build
+.PHONY: fmt vet build
+
 fmt:
 	go fmt ./...
 
@@ -14,10 +15,10 @@ run: build
 	DD_TRACE_SAMPLE_RATE=1 DD_SERVICE=calendar DD_ENV=dev DD_VERSION=0.0.1 ./cmd/calendar/calendar &
 
 notes: vet
-	go build -o cmd/notes/notes ./cmd/notes
+	CGO_ENABLED=1 CGO_CFLAGS="-O2 -g" go build -o cmd/notes/notes ./cmd/notes
 
 calendar: vet
-	go build -o cmd/calendar/calendar ./cmd/calendar
+	CGO_ENABLED=1 CGO_CFLAGS="-O2 -g" go build -o cmd/calendar/calendar ./cmd/calendar
 
 buildNotes: notes
 buildCalendar: calendar
