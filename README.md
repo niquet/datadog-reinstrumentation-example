@@ -2,7 +2,7 @@
 
 This repository demonstrates how to migrate from Datadog's APM and metrics collection to an OpenTelemetry-based observability stack. It builds upon Datadog's `apm-tutorial-golang` to showcase a vendor-agnostic approach for tracing and metrics collection.
 
-For changes made, please refer to the first commit to this repository. Changes include:
+For changes made, please refer to [the first commit to this repository](https://github.com/DataDog/apm-tutorial-golang/commit/f9359034a28b857a0d86987d3e1c99e0169da42b). Changes include:
 
 - Setting the OpenTelemetry Collector as `DD_AGENT_HOST`
 - Configuring the OpenTelemetry Collector using the Datadog Receiver to collect from the default ports for Datadog APM and DogStatsD
